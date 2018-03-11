@@ -16,7 +16,6 @@ import java.util.EnumSet;
  * @author yangzifeng
  */
 @Configuration
-@Scope(scopeName = "prototype")
 @EnableStateMachine
 public class CreateProcessConfiguration {
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(CreateProcessConfiguration.class);
