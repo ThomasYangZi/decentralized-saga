@@ -1,0 +1,21 @@
+server:
+  port: 8880
+
+spring:
+  application:
+    name: registry
+
+
+eureka:
+  instance:
+    hostname: registry
+    leaseRenewalIntervalInSeconds: 30     #Renew seconds(续约心跳间隔时间)
+    leaseExpirationDurationInSeconds: 90  #Expiration seconds(服务失效的时间)
+    preferIpAddress: false                #生产环境开启
+  server:
+      enableSelfPreservation: false       #生产环境开启
+  client:
+    registerWithEureka: false
+    fetchRegistry: false
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/

@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: company
+  datasource:
+    url: jdbc:mysql://localhost:3306/test?characterEncoding=utf8&useSSL=true
+    username: root
+    password: rootyzf
+    driver-class-name: com.mysql.jdbc.Driver
+  cloud:
+    stream:
+      kafka:
+        binder:
+          auto-create-topics: true
+          auto-add-partitions: true
+          brokers: localhost
+          zk-nodes: localhost
+      bindings:
+        org-output:
+          destination: org
+          content-type: application/json
+        user-input:
+          destination: user
+          content-type: application/json
+          group: orggroup
+  redis:
+    host: localhost
+    port: 6379
+server:
+  port: 8081
+
+eureka:
+  client:
+    registryFetchIntervalSeconds: 30      #Registry fetch seconds(客户端缓存清单更新时间)
+    serviceUrl:
+      defaultZone: http://localhost:8880/eureka/
