@@ -4,11 +4,12 @@ import com.kiviblog.saga.signal.MessageSender;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Scope;
-import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.action.Action;
-import org.springframework.statemachine.config.EnableStateMachine;
-import org.springframework.statemachine.config.StateMachineBuilder;
+import org.springframework.statemachine.config.EnableStateMachineFactory;
+import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
+import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
+import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
+import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 
 import java.util.EnumSet;
 
@@ -16,8 +17,8 @@ import java.util.EnumSet;
  * @author yangzifeng
  */
 @Configuration
-@EnableStateMachine
-public class CreateProcessConfiguration {
+@EnableStateMachineFactory(name = "stateMachineFactory")
+public class CreateProcessConfiguration extends EnumStateMachineConfigurerAdapter<CompanyStatus, CompanyEvents> {
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(CreateProcessConfiguration.class);
 
     private MessageSender messageSender;
@@ -26,19 +27,19 @@ public class CreateProcessConfiguration {
         this.messageSender = messageSender;
     }
 
-    @Bean(name = "stateMachine")
-    @Scope(scopeName="prototype")
-    public StateMachine<CompanyStatus, CompanyEvents> stateMachineTarget() throws Exception {
-        StateMachineBuilder.Builder<CompanyStatus, CompanyEvents> builder = StateMachineBuilder.builder();
-
-        builder.configureStates()
+    @Override
+    public void configure(StateMachineStateConfigurer<CompanyStatus, CompanyEvents> states) throws Exception {
+        states
                 .withStates()
                 .initial(CompanyStatus.COMPANY_INIT)
                 .states(EnumSet.allOf(CompanyStatus.class))
-                .end(CompanyStatus.COMPANY_CONFIRMED)
-                .end(CompanyStatus.COMPANY_DELETED);
+                .end(CompanyStatus.COMPANY_DELETED)
+                .end(CompanyStatus.COMPANY_CONFIRMED);
+    }
 
-        builder.configureTransitions()
+    @Override
+    public void configure(StateMachineTransitionConfigurer<CompanyStatus, CompanyEvents> transitions) throws Exception {
+        transitions
                 .withExternal()
                 .source(CompanyStatus.COMPANY_INIT).target(CompanyStatus.COMPANY_CREATED)
                 .event(CompanyEvents.COMPANY_CREATE)
@@ -54,22 +55,25 @@ public class CreateProcessConfiguration {
                 .action(checkFallback())
                 .and()
                 .withExternal()
-                .source(CompanyStatus.COMPANY_CREATED).target(CompanyStatus.COMPANY_CONFIRMED)
+                .source(CompanyStatus.FALLBACK_CHECKED).target(CompanyStatus.COMPANY_CONFIRMED)
                 // auto send event by checkFallback action
                 .event(CompanyEvents.COMPANY_CONFIRM)
                 .action(createSuccess())
                 .and()
                 .withExternal()
-                .source(CompanyStatus.COMPANY_CREATED).target(CompanyStatus.COMPANY_DELETED)
+                .source(CompanyStatus.FALLBACK_CHECKED).target(CompanyStatus.COMPANY_DELETED)
                 // auto send event by checkFallback action
                 .event(CompanyEvents.COMPANY_UNDO)
                 .action(deleteEvent());
-
-        builder.configureConfiguration().withConfiguration().autoStartup(true);
-
-
-        return builder.build();
     }
+
+    @Override
+    public void configure(StateMachineConfigurationConfigurer<CompanyStatus, CompanyEvents> config) throws Exception {
+        config
+                .withConfiguration()
+                .autoStartup(true);
+    }
+
 
     @Bean
     public Action<CompanyStatus, CompanyEvents> sendCreateEvent() {
@@ -82,19 +86,17 @@ public class CreateProcessConfiguration {
 
     @Bean
     public Action<CompanyStatus, CompanyEvents> checkFallback() {
-        return context -> {
-            logger.info("检查fallback");
-            context.getStateMachine().sendEvent(CompanyEvents.COMPANY_UNDO);
-        };
+        return context -> logger.info("check fallback");
     }
 
     @Bean
     public Action<CompanyStatus, CompanyEvents> createSuccess() {
-        return stateContext -> logger.info("创建成功");
+        return context -> logger.info("create success");
     }
 
     @Bean
     public Action<CompanyStatus, CompanyEvents> deleteEvent() {
-        return context -> logger.info("失败删除");
+        return context -> logger.info("delete");
     }
+
 }
