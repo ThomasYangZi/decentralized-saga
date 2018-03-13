@@ -10,7 +10,8 @@
 		<module>company</module>
 		<module>user</module>
 		<module>registry</module>
-	</modules>
+        <module>menu</module>
+    </modules>
 	<packaging>pom</packaging>
 
 	<name>decentralized-saga</name>
