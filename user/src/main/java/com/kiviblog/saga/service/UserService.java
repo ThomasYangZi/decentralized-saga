@@ -18,10 +18,10 @@ public class UserService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void createCompanyLeader(String companyName) {
+    public UserEntity createCompanyLeader(String companyName) {
         UserEntity userEntity = new UserEntity();
         userEntity.setName(companyName + "Leader");
         userEntity.setCompany(companyName);
-        userRepository.save(userEntity);
+        return userRepository.save(userEntity);
     }
 }

@@ -4,6 +4,7 @@ import com.kiviblog.saga.signal.MessageSender;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.support.MessageBuilder;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
@@ -74,13 +75,13 @@ public class CreateProcessConfiguration extends EnumStateMachineConfigurerAdapte
                 .autoStartup(true);
     }
 
-
     @Bean
     public Action<CompanyStatus, CompanyEvents> sendCreateEvent() {
         return context -> {
             logger.info("company created, sending event to mq...");
             String name = String.valueOf(context.getMessageHeader("name"));
-            messageSender.send(name);
+            context.getExtendedState().getVariables().put("company",name);
+            messageSender.send(MessageBuilder.withPayload(name).setHeader("type", CompanyEvents.COMPANY_CREATE.toString()).build());
         };
     }
 

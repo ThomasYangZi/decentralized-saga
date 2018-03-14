@@ -2,6 +2,7 @@ package com.kiviblog.saga.signal;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.support.MessageBuilder;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.stereotype.Component;
 
@@ -18,10 +19,9 @@ public class MessageSender {
         this.orgOutputChannel = producerChannel.output();
     }
 
-    public void send(String name) {
+    public void send(Message<?> message) {
         try {
-            orgOutputChannel.send(
-                    MessageBuilder.withPayload(name).build());
+            orgOutputChannel.send(message);
         } catch (Exception e) {
             throw new RuntimeException("Could not send message due to: "+ e.getMessage(), e);
         }

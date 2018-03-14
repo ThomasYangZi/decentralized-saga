@@ -30,7 +30,7 @@ public class ConsumerUserService {
         this.stateMachineFactory = stateMachineFactory;
     }
 
-    @StreamListener(ConsumerUserChannel.CHANNEL)
+    @StreamListener(target = ConsumerUserChannel.CHANNEL, condition = "headers['type']=='USER_CONFIRM'")
     @Transactional(rollbackFor = Exception.class)
     public void consume(@Payload String name) {
         log.info("Received message: {}.", name);

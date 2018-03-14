@@ -22,6 +22,10 @@ spring:
           destination: user
           content-type: application/json
           group: orggroup
+        res-input:
+          destination: res
+          content-type: application/json
+          group: orggroup
   redis:
     host: localhost
     port: 6379
