@@ -1,8 +1,12 @@
 package com.kiviblog.saga.domain.menu;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author yangzifeng
@@ -25,6 +29,15 @@ public class MenuEntity {
 
     @Column(name = "user", length = 40, nullable = false)
     private String username;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    @JsonBackReference
+    private MenuEntity parent;
+
+    @OneToMany(targetEntity = MenuEntity.class, mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonManagedReference
+    private List<MenuEntity> child = new ArrayList<>(0);
 
     public String getId() {
         return id;
@@ -58,6 +71,22 @@ public class MenuEntity {
         this.username = username;
     }
 
+    public MenuEntity getParent() {
+        return parent;
+    }
+
+    public void setParent(MenuEntity parent) {
+        this.parent = parent;
+    }
+
+    public List<MenuEntity> getChild() {
+        return child;
+    }
+
+    public void setChild(List<MenuEntity> child) {
+        this.child = child;
+    }
+
     @Override
     public String toString() {
         return "MenuEntity{" +
@@ -65,6 +94,8 @@ public class MenuEntity {
                 ", name='" + name + '\'' +
                 ", company='" + company + '\'' +
                 ", username='" + username + '\'' +
+                ", parent=" + parent +
+                ", child=" + child.size() +
                 '}';
     }
 }
