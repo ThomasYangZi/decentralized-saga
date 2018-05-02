@@ -11,5 +11,5 @@ public enum CompanyEvents {
     COMPANY_CONFIRM,
     // 发生错误
     COMPANY_UNDO,
-    USER_FALLBACK
+    UAA_FALLBACK
 }

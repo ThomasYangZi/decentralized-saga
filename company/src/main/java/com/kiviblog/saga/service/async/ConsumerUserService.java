@@ -40,7 +40,7 @@ public class ConsumerUserService {
         try {
             stateMachine = stateMachinePersister.restore(stateMachine, name);
             log.info(stateMachine.toString());
-            stateMachine.sendEvent(CompanyEvents.USER_FALLBACK);
+            stateMachine.sendEvent(CompanyEvents.UAA_FALLBACK);
             stateMachine.sendEvent(CompanyEvents.COMPANY_UNDO);
             log.info(stateMachine.toString());
             stateMachinePersister.persist(stateMachine, name);

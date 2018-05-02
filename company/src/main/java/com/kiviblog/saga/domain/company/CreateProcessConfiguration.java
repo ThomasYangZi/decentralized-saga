@@ -38,35 +38,43 @@ public class CreateProcessConfiguration extends EnumStateMachineConfigurerAdapte
                 .end(CompanyStatus.COMPANY_CONFIRMED);
     }
 
+    /**
+     * 问题：
+     *    1.保证公司创建和消息发送的原子性
+     *    2.如果失败如何处理
+     *    3.如何逆转状态机，或执行callback链
+     * @param transitions transitions
+     * @throws Exception exception
+     */
     @Override
     public void configure(StateMachineTransitionConfigurer<CompanyStatus, CompanyEvents> transitions) throws Exception {
         transitions
+                // 请求进来，创建公司
                 .withExternal()
                 .source(CompanyStatus.COMPANY_INIT).target(CompanyStatus.COMPANY_CREATED)
                 .event(CompanyEvents.COMPANY_CREATE)
                 .action(sendCreateEvent())
                 .and()
+                // UAA返回确认，将返回消息记录到header里，在action里取出header并转发消息到RES服务
                 .withExternal()
-                .source(CompanyStatus.COMPANY_CREATED).target(CompanyStatus.WAITING_USER)
+                .source(CompanyStatus.COMPANY_CREATED).target(CompanyStatus.UAA_CHECKED)
+                .event(CompanyEvents.UAA_FALLBACK)
+                .action(uaaFallback())
                 .and()
+                // RES返回确认
                 .withExternal()
-                .source(CompanyStatus.WAITING_USER).target(CompanyStatus.FALLBACK_CHECKED)
-                // message listener uaa
-                .event(CompanyEvents.USER_FALLBACK)
-                .action(checkFallback())
-                .and()
-                .withExternal()
-                .source(CompanyStatus.FALLBACK_CHECKED).target(CompanyStatus.COMPANY_CONFIRMED)
-                // auto send event by checkFallback action
+                .source(CompanyStatus.UAA_CHECKED).target(CompanyStatus.RES_CHECKED)
                 .event(CompanyEvents.COMPANY_CONFIRM)
                 .action(createSuccess())
                 .and()
+                // 如果哪里发生错误，比如超时，就发送UNDO事件
+                // 实际情况下，应该从undo列表里自动的执行逆操作或者callback方法
                 .withExternal()
-                .source(CompanyStatus.FALLBACK_CHECKED).target(CompanyStatus.COMPANY_DELETED)
-                // auto send event by checkFallback action
+                .source(CompanyStatus.RES_CHECKED).target(CompanyStatus.COMPANY_DELETED)
                 .event(CompanyEvents.COMPANY_UNDO)
                 .action(deleteEvent());
     }
+
 
     @Override
     public void configure(StateMachineConfigurationConfigurer<CompanyStatus, CompanyEvents> config) throws Exception {
@@ -86,8 +94,8 @@ public class CreateProcessConfiguration extends EnumStateMachineConfigurerAdapte
     }
 
     @Bean
-    public Action<CompanyStatus, CompanyEvents> checkFallback() {
-        return context -> logger.info("check fallback");
+    public Action<CompanyStatus, CompanyEvents> uaaFallback() {
+        return context -> logger.info("uaa fallback");
     }
 
     @Bean
